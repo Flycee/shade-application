@@ -12,6 +12,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
@@ -25,6 +26,7 @@ import androidx.fragment.app.Fragment;
 
 import java.util.ArrayList;
 import java.util.Set;
+import java.util.UUID;
 
 public class BluetoothFragment extends Fragment {
 
@@ -45,6 +47,10 @@ public class BluetoothFragment extends Fragment {
 
     BluetoothAdapter bluetoothAdapter;
 
+    static final UUID myUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+    String name;
+    String mac;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -63,6 +69,12 @@ public class BluetoothFragment extends Fragment {
 
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
         getActivity().registerReceiver(receiver, filter);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        getActivity().registerReceiver(isPaired, new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED));
     }
 
     private void printPairedDevices() {
@@ -119,6 +131,28 @@ public class BluetoothFragment extends Fragment {
         }
     };
 
+    final BroadcastReceiver isPaired = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if(BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(action)) {
+                int temp = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, -1);
+                if(temp==BluetoothDevice.BOND_BONDED) {
+                    Log.d(TAG, "Paired");
+                    pairedDevicesAdapter.add(name + "\n" + mac);
+                    pairedDevicesAdapter.notifyDataSetChanged();
+                    foundDevicesAdapter.remove(name + "\n" + mac);
+                }
+            }
+        }
+    };
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        getActivity().unregisterReceiver(isPaired);
+    }
+
     @Override
     public void onDestroy() {
         super.onDestroy();
@@ -139,7 +173,6 @@ public class BluetoothFragment extends Fragment {
 
         foundDevicesAdapter = new ArrayAdapter<>(getActivity().getApplicationContext(), android.R.layout.simple_list_item_1);
         foundDevicesList.setAdapter(foundDevicesAdapter);
-        //foundDevicesList.setOnClickListener(); todo
 
         searchDevicesButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -152,6 +185,20 @@ public class BluetoothFragment extends Fragment {
                     Intent enableBluetoothIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                     startActivityForResult(enableBluetoothIntent, REQUEST_ENABLE_BLUETOOTH);
                 }
+            }
+        });
+
+        foundDevicesList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Log.d(TAG, foundDevicesList.getItemAtPosition(position) + "\nposition: " + position + "\nid: " + id + "\n");
+                //Get mac address of the list item by splitting a string
+                String listItem = foundDevicesList.getItemAtPosition(position).toString();
+                String[] parts = listItem.split("\n");
+                name = parts[0];
+                mac = parts[1];
+                BluetoothDevice device = bluetoothAdapter.getRemoteDevice(mac);
+                device.createBond();
             }
         });
 
