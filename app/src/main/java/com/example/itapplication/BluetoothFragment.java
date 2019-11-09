@@ -2,11 +2,13 @@ package com.example.itapplication;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothSocket;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -24,6 +26,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.UUID;
@@ -86,9 +89,6 @@ public class BluetoothFragment extends Fragment {
                 list.add(device.getName() + "\n" + device.getAddress());
             }
         }
-        else {
-            Toast.makeText(getActivity(), "No paired devices found", Toast.LENGTH_SHORT).show();
-        }
 
         pairedDevicesAdapter.clear();
         pairedDevicesAdapter.addAll(list);
@@ -139,13 +139,72 @@ public class BluetoothFragment extends Fragment {
                 int temp = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, -1);
                 if(temp==BluetoothDevice.BOND_BONDED) {
                     Log.d(TAG, "Paired");
-                    pairedDevicesAdapter.add(name + "\n" + mac);
-                    pairedDevicesAdapter.notifyDataSetChanged();
+                    printPairedDevices();
                     foundDevicesAdapter.remove(name + "\n" + mac);
+                }
+                else {
+                    printPairedDevices();
                 }
             }
         }
     };
+
+    private class Connect extends AsyncTask<Void, Void, Void> {
+
+        boolean connectionSucceed;
+
+        private final BluetoothSocket mmSocket;
+        private final BluetoothDevice mmDevice;
+
+        public Connect(BluetoothDevice device) {
+            //Temporary object becasuse mmSocket is final
+            BluetoothSocket tmp = null;
+            mmDevice = device;
+            try {
+                tmp = device.createInsecureRfcommSocketToServiceRecord(myUUID);
+            }
+            catch (IOException e) {
+                Log.e(TAG, "Error when creating socket", e);
+            }
+            mmSocket = tmp;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            Toast.makeText(getActivity(), "Connecting...", Toast.LENGTH_SHORT).show();
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            //We have to cancel discovery to not slow down the connection
+            bluetoothAdapter.cancelDiscovery();
+            try {
+                mmSocket.connect();
+                connectionSucceed = true;
+            }
+            catch (IOException connectException) {
+                connectionSucceed = false;
+                try {
+                    mmSocket.close();
+                }
+                catch (IOException closeException) {
+                    Log.e(TAG, "Could't close the socket", closeException);
+                }
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            if(connectionSucceed) {
+                Toast.makeText(getActivity(), "Connection successful", Toast.LENGTH_SHORT).show();
+            }
+            else {
+                Toast.makeText(getActivity(), "Connection failed", Toast.LENGTH_SHORT).show();
+                getActivity().finish();
+            }
+        }
+    }
 
     @Override
     public void onPause() {
@@ -198,7 +257,7 @@ public class BluetoothFragment extends Fragment {
                 name = parts[0];
                 mac = parts[1];
                 BluetoothDevice device = bluetoothAdapter.getRemoteDevice(mac);
-                device.createBond();
+                new Connect(device).execute();
             }
         });
 
