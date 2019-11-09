@@ -37,6 +37,7 @@ public class BluetoothFragment extends Fragment {
 
     private final String TAG = MainActivity.class.getSimpleName();
     private static final int REQUEST_ENABLE_BLUETOOTH = 1;
+    private static BluetoothSocket socket;
 
     Button searchDevicesButton;
 
@@ -72,6 +73,10 @@ public class BluetoothFragment extends Fragment {
 
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
         getActivity().registerReceiver(receiver, filter);
+    }
+
+    public BluetoothSocket getSocket() {
+        return socket;
     }
 
     @Override
@@ -167,11 +172,12 @@ public class BluetoothFragment extends Fragment {
                 Log.e(TAG, "Error when creating socket", e);
             }
             mmSocket = tmp;
+            socket = mmSocket;
         }
 
         @Override
         protected void onPreExecute() {
-            Toast.makeText(getActivity(), "Connecting...", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getActivity(), "Connecting...", Toast.LENGTH_LONG).show();
         }
 
         @Override
@@ -186,9 +192,10 @@ public class BluetoothFragment extends Fragment {
                 connectionSucceed = false;
                 try {
                     mmSocket.close();
+                    Log.d(TAG, "Connection exception", connectException);
                 }
                 catch (IOException closeException) {
-                    Log.e(TAG, "Could't close the socket", closeException);
+                    Log.e(TAG, "Couldn't close the socket", closeException);
                 }
             }
             return null;
