@@ -27,6 +27,7 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.UUID;
@@ -158,7 +159,7 @@ public class BluetoothFragment extends Fragment {
 
         boolean connectionSucceed;
 
-        private final BluetoothSocket mmSocket;
+        private BluetoothSocket mmSocket;
         private final BluetoothDevice mmDevice;
 
         public Connect(BluetoothDevice device) {
@@ -189,13 +190,27 @@ public class BluetoothFragment extends Fragment {
                 connectionSucceed = true;
             }
             catch (IOException connectException) {
-                connectionSucceed = false;
                 try {
-                    mmSocket.close();
-                    Log.d(TAG, "Connection exception", connectException);
+                    Log.e(TAG, "Trying fallback...\n" + connectException.getMessage());
+                    try {
+                        mmSocket = (BluetoothSocket) mmDevice.getClass().getMethod("createRfcommSocket", new Class[]{int.class}).invoke(mmDevice, 1);
+                    }
+                    catch (NoSuchMethodException e) {
+                        Log.e(TAG, e.getMessage());
+                    }
+                    catch (IllegalAccessException e) {
+                        Log.e(TAG, e.getMessage());
+                    }
+                    catch (InvocationTargetException e) {
+                        Log.e(TAG, e.getMessage());
+                    }
+                    mmSocket.connect();
+                    Log.e(TAG, "Connected");
+                    connectionSucceed = true;
                 }
                 catch (IOException closeException) {
-                    Log.e(TAG, "Couldn't close the socket", closeException);
+                    connectionSucceed = false;
+                    Log.e(TAG, "Couldn't close the socket\n" + closeException.getMessage(), closeException);
                 }
             }
             return null;
@@ -204,10 +219,10 @@ public class BluetoothFragment extends Fragment {
         @Override
         protected void onPostExecute(Void aVoid) {
             if(connectionSucceed) {
-                Toast.makeText(getActivity(), "Connection successful", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), "Connection successful", Toast.LENGTH_SHORT).show();
             }
             else {
-                Toast.makeText(getActivity(), "Connection failed", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), "Connection failed", Toast.LENGTH_SHORT).show();
                 getActivity().finish();
             }
         }
@@ -257,7 +272,6 @@ public class BluetoothFragment extends Fragment {
         foundDevicesList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Log.d(TAG, foundDevicesList.getItemAtPosition(position) + "\nposition: " + position + "\nid: " + id + "\n");
                 //Get mac address of the list item by splitting a string
                 String listItem = foundDevicesList.getItemAtPosition(position).toString();
                 String[] parts = listItem.split("\n");
