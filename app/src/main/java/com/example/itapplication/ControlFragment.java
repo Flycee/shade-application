@@ -56,7 +56,6 @@ public class ControlFragment extends Fragment {
 
     private void turnOnLED() {
         BluetoothFragment fragment = new BluetoothFragment();
-
         if(fragment.getSocket()!=null) {
             socket = fragment.getSocket();
 
@@ -64,6 +63,12 @@ public class ControlFragment extends Fragment {
                 socket.getOutputStream().write("ON".getBytes());
             } catch (IOException e) {
                 Log.e("ControlFragment", e.toString(), e);
+                try {
+                    socket.close();
+                }
+                catch (IOException closeException) {
+                    Log.e("", e.getMessage(), closeException);
+                }
             }
         }
     }
@@ -78,6 +83,12 @@ public class ControlFragment extends Fragment {
                 socket.getOutputStream().write("OFF".getBytes());
             } catch (IOException e) {
                 Log.e("ControlFragment", e.toString(), e);
+                try {
+                    socket.close();
+                }
+                catch (IOException closeException) {
+                    Log.e("", e.getMessage(), closeException);
+                }
             }
         }
     }
