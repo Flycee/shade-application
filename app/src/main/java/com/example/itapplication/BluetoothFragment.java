@@ -38,23 +38,40 @@ public class BluetoothFragment extends Fragment {
 
     private final String TAG = MainActivity.class.getSimpleName();
     private static final int REQUEST_ENABLE_BLUETOOTH = 1;
-    private static BluetoothSocket socket;
 
-    Button searchDevicesButton;
+    private Button searchDevicesButton;
 
-    ListView pairedDevicesList;
-    ListView foundDevicesList;
+    private ListView pairedDevicesList;
+    private ListView foundDevicesList;
 
-    Set<BluetoothDevice> pairedDevices;
+    private Set<BluetoothDevice> pairedDevices;
 
-    ArrayAdapter pairedDevicesAdapter;
-    ArrayAdapter <String> foundDevicesAdapter;
+    private ArrayAdapter pairedDevicesAdapter;
+    private ArrayAdapter <String> foundDevicesAdapter;
 
-    BluetoothAdapter bluetoothAdapter;
+    private BluetoothAdapter bluetoothAdapter;
 
-    static final UUID myUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-    String name;
-    String mac;
+    private static final UUID myUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+    private String name;
+    private String mac;
+
+    private BluetoothFragmentListener listener;
+
+    public interface BluetoothFragmentListener {
+        void onConnect(BluetoothSocket mmSocket);
+    }
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        //context = activity
+        if(context instanceof BluetoothFragmentListener) {
+            listener = (BluetoothFragmentListener) context;
+        }
+        else {
+            throw new RuntimeException(context.toString() + " must implement BluetoothFragmentListener");
+        }
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -74,10 +91,6 @@ public class BluetoothFragment extends Fragment {
 
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
         getActivity().registerReceiver(receiver, filter);
-    }
-
-    public BluetoothSocket getSocket() {
-        return socket;
     }
 
     @Override
@@ -173,7 +186,6 @@ public class BluetoothFragment extends Fragment {
                 Log.e(TAG, "Error when creating socket", e);
             }
             mmSocket = tmp;
-            socket = mmSocket;
         }
 
         @Override
@@ -213,6 +225,8 @@ public class BluetoothFragment extends Fragment {
                     Log.e(TAG, "Couldn't close the socket\n" + closeException.getMessage(), closeException);
                 }
             }
+            Log.e("Bluetooth socket: ", mmSocket.toString() + " " + String.valueOf(mmSocket.isConnected()));
+            listener.onConnect(mmSocket);
             return null;
         }
 

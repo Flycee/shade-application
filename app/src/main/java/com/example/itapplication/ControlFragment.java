@@ -54,11 +54,12 @@ public class ControlFragment extends Fragment {
         return view;
     }
 
-    private void turnOnLED() {
-        BluetoothFragment fragment = new BluetoothFragment();
-        if(fragment.getSocket()!=null) {
-            socket = fragment.getSocket();
+    public void getSocket(BluetoothSocket mmSocket) {
+        socket = mmSocket;
+        Log.e("Control socket: ", socket.toString() + " " + String.valueOf(socket.isConnected()));
+    }
 
+    private void turnOnLED() {
             try {
                 socket.getOutputStream().write("ON".getBytes());
             } catch (IOException e) {
@@ -70,15 +71,9 @@ public class ControlFragment extends Fragment {
                     Log.e("", e.getMessage(), closeException);
                 }
             }
-        }
     }
 
     private void turnOffLED() {
-        BluetoothFragment fragment = new BluetoothFragment();
-
-        if(fragment.getSocket()!=null) {
-            socket = fragment.getSocket();
-
             try {
                 socket.getOutputStream().write("OFF".getBytes());
             } catch (IOException e) {
@@ -90,6 +85,5 @@ public class ControlFragment extends Fragment {
                     Log.e("", e.getMessage(), closeException);
                 }
             }
-        }
     }
 }
