@@ -1,20 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical" android:layout_width="match_parent"
-    android:layout_height="match_parent">
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
 
     <ImageView
+        android:id="@+id/shadeImage"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:src="@drawable/icon_roller_blinds"
-        android:layout_gravity="center"
-        android:layout_marginTop="100dp">
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="100dp"
+        android:src="@drawable/icon_roller_blinds">
     </ImageView>
 
+    <!-- This library requires pair of the VerticalSeekBar and VerticalSeekBarWrapper classes -->
+
+    <com.h6ah4i.android.widget.verticalseekbar.VerticalSeekBarWrapper
+        android:layout_width="wrap_content"
+        android:layout_height="220dp"
+        android:layout_toRightOf="@+id/shadeImage"
+        android:layout_marginTop="100dp">
+        <com.h6ah4i.android.widget.verticalseekbar.VerticalSeekBar xmlns:app="http://schemas.android.com/apk/res-auto"
+            android:id="@+id/mySeekBar"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:splitTrack="false"
+            android:thumb="@drawable/my_thumb"
+            android:max="100"
+            app:seekBarRotation="CW270" /> <!-- Rotation: CW90 or CW270 -->
+    </com.h6ah4i.android.widget.verticalseekbar.VerticalSeekBarWrapper>
+
     <LinearLayout
+        android:layout_below="@+id/shadeImage"
         android:layout_marginTop="50dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
         android:layout_gravity="center">
 
         <Button
@@ -37,4 +58,4 @@
 
     </LinearLayout>
 
-</LinearLayout>
+</RelativeLayout>

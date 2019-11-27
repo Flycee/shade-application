@@ -7,6 +7,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.SeekBar;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -17,10 +18,12 @@ import java.io.IOException;
 
 public class ControlFragment extends Fragment {
 
-    BluetoothSocket socket;
+    private BluetoothSocket socket;
 
-    Button upButton;
-    Button downButton;
+    private Button upButton;
+    private Button downButton;
+
+    private int barProgress;
 
     public ControlFragment() {}
 
@@ -36,6 +39,7 @@ public class ControlFragment extends Fragment {
 
         upButton = view.findViewById(R.id.upButton);
         downButton = view.findViewById(R.id.downButton);
+        SeekBar seekBar = view.findViewById(R.id.mySeekBar);
 
         upButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -51,17 +55,50 @@ public class ControlFragment extends Fragment {
             }
         });
 
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                barProgress = progress;
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                try {
+                    if (socket != null)
+                        socket.getOutputStream().write(Integer.toString(barProgress).getBytes());
+                }
+                catch (IOException e) {
+                    Log.e("ControlFragment", e.toString(), e);
+                    try {
+                        socket.close();
+                    }
+                    catch (IOException closeException) {
+                        Log.e("", e.getMessage(), closeException);
+                    }
+                }
+                Toast.makeText(getActivity(), "Shade position: " + barProgress, Toast.LENGTH_SHORT).show();
+            }
+        });
+
         return view;
     }
 
     public void getSocket(BluetoothSocket mmSocket) {
         socket = mmSocket;
-        Log.e("Control socket: ", socket.toString() + " " + String.valueOf(socket.isConnected()));
+        Log.e("Control socket: ", socket.toString() + " " + socket.isConnected());
     }
 
     private void turnOnLED() {
             try {
-                socket.getOutputStream().write("ON".getBytes());
+                if(socket != null)
+                    socket.getOutputStream().write("ON".getBytes());
+                else
+                    Toast.makeText(getActivity(), "There is no connected device!", Toast.LENGTH_SHORT).show();
             } catch (IOException e) {
                 Log.e("ControlFragment", e.toString(), e);
                 try {
@@ -75,7 +112,10 @@ public class ControlFragment extends Fragment {
 
     private void turnOffLED() {
             try {
-                socket.getOutputStream().write("OFF".getBytes());
+                if(socket != null)
+                    socket.getOutputStream().write("OFF".getBytes());
+                else
+                    Toast.makeText(getActivity(), "There is no connected device!", Toast.LENGTH_SHORT).show();
             } catch (IOException e) {
                 Log.e("ControlFragment", e.toString(), e);
                 try {

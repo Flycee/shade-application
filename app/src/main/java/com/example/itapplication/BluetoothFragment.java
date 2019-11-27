@@ -207,13 +207,7 @@ public class BluetoothFragment extends Fragment {
                     try {
                         mmSocket = (BluetoothSocket) mmDevice.getClass().getMethod("createRfcommSocket", new Class[]{int.class}).invoke(mmDevice, 1);
                     }
-                    catch (NoSuchMethodException e) {
-                        Log.e(TAG, e.getMessage());
-                    }
-                    catch (IllegalAccessException e) {
-                        Log.e(TAG, e.getMessage());
-                    }
-                    catch (InvocationTargetException e) {
+                    catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
                         Log.e(TAG, e.getMessage());
                     }
                     mmSocket.connect();
