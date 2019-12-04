@@ -28,8 +28,11 @@ import androidx.fragment.app.Fragment;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
 
 public class BluetoothFragment extends Fragment {
@@ -54,6 +57,9 @@ public class BluetoothFragment extends Fragment {
     private static final UUID myUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     private String name;
     private String mac;
+
+    private String pin = "1234";
+    private boolean isConnected = false;
 
     private BluetoothFragmentListener listener;
 
@@ -91,6 +97,28 @@ public class BluetoothFragment extends Fragment {
 
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
         getActivity().registerReceiver(receiver, filter);
+        IntentFilter filter1 = new IntentFilter(BluetoothDevice.ACTION_ACL_DISCONNECTED);
+        getActivity().registerReceiver(receiver, filter1);
+
+        pairedDevices = bluetoothAdapter.getBondedDevices();
+
+        TimerTask timerTask = new TimerTask() {
+            @Override
+            public void run() {
+                if(isConnected == false && pairedDevices.size()>0) {
+                    for (BluetoothDevice device : pairedDevices) {
+                        Log.d(TAG, device.getAddress().toString() + isConnected + pairedDevices.size());
+                        if(device.getAddress().equals(mac)) {
+                            Log.d(TAG, "Connect again");
+                            device.setPin(pin.getBytes());
+                            new Connect(device).execute();
+                        }
+                    }
+                }
+            }
+        };
+        Timer timer = new Timer();
+        timer.schedule(timerTask, 10000, 10000);
     }
 
     @Override
@@ -147,6 +175,10 @@ public class BluetoothFragment extends Fragment {
                     foundDevicesAdapter.notifyDataSetChanged();
                 }
             }
+            else if(BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)) {
+                isConnected = false;
+                Log.d(TAG, "Disconnected");
+            }
         }
     };
 
@@ -190,7 +222,13 @@ public class BluetoothFragment extends Fragment {
 
         @Override
         protected void onPreExecute() {
-            Toast.makeText(getActivity(), "Connecting...", Toast.LENGTH_LONG).show();
+            getActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(getActivity(), "Connecting...", Toast.LENGTH_LONG).show();
+                }
+            });
+//            Toast.makeText(getActivity(), "Connecting...", Toast.LENGTH_LONG).show();
         }
 
         @Override
@@ -199,7 +237,7 @@ public class BluetoothFragment extends Fragment {
             bluetoothAdapter.cancelDiscovery();
             try {
                 mmSocket.connect();
-                connectionSucceed = true;
+                isConnected = connectionSucceed = true;
             }
             catch (IOException connectException) {
                 try {
@@ -212,10 +250,10 @@ public class BluetoothFragment extends Fragment {
                     }
                     mmSocket.connect();
                     Log.e(TAG, "Connected");
-                    connectionSucceed = true;
+                    isConnected = connectionSucceed = true;
                 }
                 catch (IOException closeException) {
-                    connectionSucceed = false;
+                    isConnected = connectionSucceed = false;
                     Log.e(TAG, "Couldn't close the socket\n" + closeException.getMessage(), closeException);
                 }
             }
@@ -231,7 +269,7 @@ public class BluetoothFragment extends Fragment {
             }
             else {
                 Toast.makeText(getContext(), "Connection failed", Toast.LENGTH_SHORT).show();
-                getActivity().finish();
+                //getActivity().finish();
             }
         }
     }
