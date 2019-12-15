@@ -12,8 +12,8 @@ import com.google.android.material.tabs.TabLayout;
 
 public class MainActivity extends AppCompatActivity implements BluetoothFragment.BluetoothFragmentListener {
 
-    private BluetoothFragment bluetoothFragment;
     private ControlFragment controlFragment;
+    private PresetTimeFragment presetTimeFragment;
 
     SwipeScreenAdapter swipeScreenAdapter;
     ViewPager viewPager;
@@ -23,9 +23,6 @@ public class MainActivity extends AppCompatActivity implements BluetoothFragment
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        bluetoothFragment = new BluetoothFragment();
-        controlFragment = new ControlFragment();
 
         viewPager = (ViewPager) findViewById(R.id.viewPager);
         tabLayout = (TabLayout) findViewById(R.id.tabLayout);
@@ -42,10 +39,15 @@ public class MainActivity extends AppCompatActivity implements BluetoothFragment
     @Override
     public void onConnect(BluetoothSocket mmSocket) {
         //ControlFragment ma id 0
-        ControlFragment controlFrag = (ControlFragment) getSupportFragmentManager().findFragmentByTag("android:switcher:" + R.id.viewPager + ":0");
-        if(controlFrag!=null) {
+        controlFragment = (ControlFragment) getSupportFragmentManager().findFragmentByTag("android:switcher:" + R.id.viewPager + ":0");
+        presetTimeFragment = (PresetTimeFragment) getSupportFragmentManager().findFragmentByTag("android:switcher:" + R.id.viewPager + ":2");
+        if(controlFragment!=null) {
             Log.e("Activity socket: ", mmSocket.toString() + " " + String.valueOf(mmSocket.isConnected()));
-            controlFrag.getSocket(mmSocket);
+            controlFragment.getSocket(mmSocket);
+        }
+        if(presetTimeFragment!=null) {
+            Log.e("Preset socket: ", mmSocket.toString() + " " + String.valueOf(mmSocket.isConnected()));
+            presetTimeFragment.getSocket(mmSocket);
         }
         else {
             Log.e("", "Nie ma controlFrag!");

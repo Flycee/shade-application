@@ -258,6 +258,7 @@ public class BluetoothFragment extends Fragment {
                 }
             }
             Log.e("Bluetooth socket: ", mmSocket.toString() + " " + String.valueOf(mmSocket.isConnected()));
+            //calling  MainActivity function to pass socket to the ControlFragment
             listener.onConnect(mmSocket);
             return null;
         }
