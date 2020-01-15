@@ -1,6 +1,7 @@
 package com.example.itapplication;
 
 import android.bluetooth.BluetoothSocket;
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -13,6 +14,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 
 import java.io.IOException;
@@ -45,28 +47,70 @@ public class PresetTimeFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 //this Java class is counting months from 0 to 11 so we have to add 1
-                int month = datePicker.getMonth()+1;
-                String date = datePicker.getYear() + "/"+ month + "/" + datePicker.getDayOfMonth();
-                String time = timePicker.getHour() + "/" + timePicker.getMinute();
-                Toast.makeText(getActivity(), "Shade will run on:" + "\n" + date + "\n" +
-                        timePicker.getHour() + ":" + timePicker.getMinute(), Toast.LENGTH_LONG).show();
-                Log.d("", date+"/"+time);
+                //int month = datePicker.getMonth()+1;
+                /*final String[] date = {"0"};
+                final String[] time = {"0"};
+                date[0] = datePicker.getYear() + "/"+ month + "/" + datePicker.getDayOfMonth();
+                time[0] = timePicker.getHour() + "/" + timePicker.getMinute();*/
+                /*Toast.makeText(getActivity(), "Shade will run on:" + "\n" + date + "\n" +
+                        timePicker.getHour() + ":" + timePicker.getMinute(), Toast.LENGTH_LONG).show();*/
+                //Log.d("", date[0]+"/"+time[0]);
 
-                try {
                     //send data only if we are already connected
-                    if(socket != null)
-                        socket.getOutputStream().write((date+"/"+time).getBytes());
+                    if(socket != null) {
+                        AlertDialog.Builder dialog = new AlertDialog.Builder(getActivity());
+                        dialog.setTitle("Open or Close?")
+                                .setPositiveButton("Open", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        try {
+                                            int month = datePicker.getMonth()+1;
+                                            String date = datePicker.getYear() + "/"+ month + "/" + datePicker.getDayOfMonth();
+                                            String time = timePicker.getHour() + "/" + timePicker.getMinute();
+                                            socket.getOutputStream().write((date + "/" + time + "/" + 0).getBytes());
+                                            Toast.makeText(getActivity(), "Shade will run on:" + "\n" + date + "\n" +
+                                                    timePicker.getHour() + ":" + timePicker.getMinute(), Toast.LENGTH_LONG).show();
+                                        }
+                                        catch (IOException e) {
+                                            Log.e("PresetTimeFragment", e.toString(), e);
+                                            try {
+                                                socket.close();
+                                            }
+                                            catch (IOException closeException) {
+                                                Log.e("", e.getMessage(), closeException);
+                                            }
+                                        }
+                                    }
+                                })
+                                .setNegativeButton("Close", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        try {
+                                            int month = datePicker.getMonth()+1;
+                                            String date = datePicker.getYear() + "/"+ month + "/" + datePicker.getDayOfMonth();
+                                            String time = timePicker.getHour() + "/" + timePicker.getMinute();
+                                            socket.getOutputStream().write((date + "/" + time + "/" + 1).getBytes());
+                                            Toast.makeText(getActivity(), "Shade will run on:" + "\n" + date + "\n" +
+                                                    timePicker.getHour() + ":" + timePicker.getMinute(), Toast.LENGTH_LONG).show();
+                                        }
+                                        catch (IOException e) {
+                                            Log.e("PresetTimeFragment", e.toString(), e);
+                                            try {
+                                                socket.close();
+                                            }
+                                            catch (IOException closeException) {
+                                                Log.e("", e.getMessage(), closeException);
+                                            }
+                                        }
+                                    }
+                                });
+                        dialog.show();
+
+                        /*Toast.makeText(getActivity(), "Shade will run on:" + "\n" + date + "\n" +
+                                timePicker.getHour() + ":" + timePicker.getMinute(), Toast.LENGTH_LONG).show();*/
+                    }
                     else
                         Toast.makeText(getActivity(), "There is no connected device!", Toast.LENGTH_SHORT).show();
-                } catch (IOException e) {
-                    Log.e("PresetTimeFragment", e.toString(), e);
-                    try {
-                        socket.close();
-                    }
-                    catch (IOException closeException) {
-                        Log.e("", e.getMessage(), closeException);
-                    }
-                }
             }
         });
 
